@@ -52,84 +52,41 @@ void app_main(void)
         return;
     }
 
-    char line[128];
-    char *device_filename;
+    for(int i=0; i<100; i++){
 
-    device_filename = "/spiflash/innerbutverylongname.txt";
+        ESP_LOGI(TAG, "Opening file");
 
+        char file[50] = "/spiflash/helloooooooo";
+        char compa[50] = "/spiflash/";
+        char str[10];
+        sprintf(str, "%d", i);
+        strcat(file, str);
 
-    // Open file for reading
-    ESP_LOGI(TAG, "Opening file");
-    FILE *f;
-    for(int i = 0; i < CONFIG_EXAMPLE_FATFS_WRITE_COUNT; i++){
-        f = fopen(device_filename, "wb");
+        FILE *f;
+
+        // Open file for reading
+        ESP_LOGI(TAG, "Reading file");
+        f = fopen(file, "rb");
         if (f == NULL) {
-            ESP_LOGE(TAG, "Failed to open file for writing");
+            ESP_LOGE(TAG, "Failed to open file for reading");
             return;
         }
-        fprintf(f, "This is written by the device");
+        char line[128];
+        fgets(line, sizeof(line), f);
         fclose(f);
+        // strip newline
+        char *pos = strchr(line, '\n');
+        if (pos) {
+            *pos = '\0';
+        }
+        strcat(compa, line);
+        if(strcmp(compa, file)){
+            ESP_LOGE(TAG, "Wrong content!");
+            return;
+        }
+        ESP_LOGI(TAG, "Read from file: '%s'", line);
     }
 
-    ESP_LOGI(TAG, "File written");
-
-    // Open file for reading
-    ESP_LOGI(TAG, "Reading file");
-    f = fopen(device_filename, "rb");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to open file for reading");
-        return;
-    }
-    fgets(line, sizeof(line), f);
-    fclose(f);
-    // strip newline
-    char *pos = strchr(line, '\n');
-    if (pos) {
-        *pos = '\0';
-    }
-    ESP_LOGI(TAG, "Read from file: '%s'", line);
-
-
-    ESP_LOGI(TAG, "Reading file");
-    char *host_filename1;
-    char *host_filename2;
-
-    host_filename1 = "/spiflash/sublongnames/testlongfilenames.txt";
-    host_filename2 = "/spiflash/hellolongname.txt";
-
-
-    struct stat info;
-    struct tm timeinfo;
-    char buffer[32];
-
-    if(stat(host_filename1, &info) < 0){
-        ESP_LOGE(TAG, "Failed to read file stats");
-        return;
-    }
-    localtime_r(&info.st_mtime, &timeinfo);
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d", &timeinfo);
-
-    ESP_LOGI(TAG, "The file '%s' was modified at date: %s", host_filename1, buffer);
-
-
-
-    f = fopen(host_filename2, "rb");
-
-    if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to open file for reading");
-        return;
-    }
-    fgets(line, sizeof(line), f);
-    fclose(f);
-    // strip newline
-    pos = strchr(line, '\n');
-    if (pos) {
-        *pos = '\0';
-    }
-    ESP_LOGI(TAG, "Read from file: '%s'", line);
-
-    // Unmount FATFS
-    ESP_LOGI(TAG, "Unmounting FAT filesystem");
 
     ESP_ERROR_CHECK(esp_vfs_fat_spiflash_unmount_rw_wl(base_path, s_wl_handle));
 
